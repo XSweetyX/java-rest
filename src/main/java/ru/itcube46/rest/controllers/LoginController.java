@@ -4,6 +4,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.http.HttpHeaders;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.json.BasicJsonParser;
 import org.springframework.boot.json.JsonParser;
 import org.springframework.http.HttpEntity;
@@ -25,14 +26,16 @@ import ru.itcube46.rest.repositories.UsersRepository;
 @RequestMapping(path = "api/login", produces = "application/json")
 public class LoginController {
     UsersRepository usersRepository;
-    JsonParser parser = new BasicJsonParser();
+    
 
-    public LoginController(UsersRepository usersrepository) {
+    public LoginController(UsersRepository usersRepository) {
         this.usersRepository = usersRepository;
     }
 
     @GetMapping
     public String getToken(@RequestParam(value = "idToken") String idToken, @RequestParam(value = "accessToken") String accessToken) {
+    JsonParser parser = new BasicJsonParser();
+
         // Construct the URL
         String url = "https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=" + accessToken;
 
@@ -58,19 +61,23 @@ public class LoginController {
             log.info("HTTP 200");
             log.info(email);
 
+
             var generatedToken = UUID.randomUUID().toString().replaceAll("-", "0");
-             
-            
+
+
             Optional<User> user = usersRepository.findByEmail(email);
             if(user.isPresent()) {
                 usersRepository.updateToken(email, generatedToken);
             }else{
                 usersRepository.save(email, generatedToken);
             }
-            
+
             
             //usersRepository.saveToken(googleMail, generatedToken);
-            return generatedToken;
+            Optional<User> user1 = usersRepository.findByEmail(email);
+            return user1.get().getId().toString() +":" + generatedToken;
+
+            
             // return getUserName(Id);
         } else {
             //ЭТО ПРИМЕР ЗАПРОСА К БАЗЕ ДАННЫХ В ДЖАВА СКРИПТ ДРУГОГО ПРОЕКТА, НО ОЧЕНЬ ПОМОЖЕТ ВАМ! ОНО ДОБАВЛЯЕТ НОВОГО ЮЗЕРА,
